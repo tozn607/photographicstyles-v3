@@ -18,9 +18,9 @@ A native Swift application and command-line utility for **macOS** and **iOS** th
 
 PhotoStyle takes any picture (JPEG, PNG, HEIC, TIFF, WebP, RAW) and generates Apple's native auxiliary data structures and ISOBMFF container items without baking changes into the primary image pixels. When imported into Apple Photos on iOS 18+ or macOS Sequoia+, Apple Photos recognizes the image as an Apple-captured photo and unlocks its full suite of interactive adjustment controls:
 
-- **Photographic Styles (Rust)**: Unlocks the 2D Tone, Color, and Palette control pad.
-- **Photographic Styles 3 (Texture + Grain)**: Injects Standard `texture_styles` metadata, enabling live Texture and Film Grain sliders (as introduced on iPhone 16 / iPhone 16 Pro).
-- **Apple Portrait Mode (Rust)**: Generates editable depth maps and disparity graphs for real-time aperture ($f$-stop) depth-of-field manipulation.
+- **Photographic Styles (Rust)**: Unlocks the 2D Tone, Color, and Palette control pad (as introduced on iPhone 16 / 17) .
+- **Photographic Styles 3 (Texture + Grain)**: Injects Standard `texture_styles` metadata, enabling live Texture and Film Grain sliders (as introduced on iPhone Duo / iPhone 18 Pro).
+- **Apple Portrait Mode (Rust)**: Generates editable depth maps and disparity graphs for real-time aperture ($f$-stop) depth-of-field manipulation (requires depth data from Apple/OPPO Portrait mode).
 
 > [!NOTE]
 > **Non-destructive editing**: These options write editable metadata and auxiliary layer graphs; the look is **not** baked into the photo's pixels.
