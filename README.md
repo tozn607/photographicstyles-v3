@@ -10,7 +10,7 @@ A native Swift application and command-line utility for **macOS** and **iOS** th
 
 **Version**: `v1.0`  
 **Author**: **@tozn607**  
-**Repository**: [https://github.com/tozn607/photographicstyles-v3](https://github.com/tozn607/photographicstyles-v3)
+**Repository**: [https://github.com/tozn607/photographicstyles-v3](https://github.com/tozn607/photographicstyles-v3)  
 **Download**: [Releases Tab](https://github.com/tozn607/photographicstyles-v3/releases)
 ### Note: .ipa file is currently broken.
 
