@@ -59,37 +59,7 @@ jobs:
           mkdir -p dist/macos/PhotoStyle.app/Contents/Resources
           cp .build/release/PhotoStyleApp dist/macos/PhotoStyle.app/Contents/MacOS/PhotoStyleApp
           cp .build/release/photostyle dist/macos/
-
-          cat << 'EOF' > dist/macos/PhotoStyle.app/Contents/Info.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleExecutable</key>
-    <string>PhotoStyleApp</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.tozn607.photostyle</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>PhotoStyle</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>PhotoStyle needs access to your photo library to import and export pictures with Photographic Styles.</string>
-</dict>
-</plist>
-EOF
+          cp Sources/PhotoStyleApp/Info-macOS.plist dist/macos/PhotoStyle.app/Contents/Info.plist
 
           codesign --force --deep --sign - dist/macos/PhotoStyle.app
           cd dist/macos
@@ -152,53 +122,7 @@ EOF
             BIN_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "PhotoStyleApp" -type f | head -n 1)
             mkdir -p dist/ios/Payload/PhotoStyleApp.app
             cp "$BIN_PATH" dist/ios/Payload/PhotoStyleApp.app/
-            cat << 'EOF' > dist/ios/Payload/PhotoStyleApp.app/Info.plist
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleDisplayName</key>
-    <string>PhotoStyle</string>
-    <key>CFBundleExecutable</key>
-    <string>PhotoStyleApp</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.tozn607.photostyle</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>PhotoStyleApp</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>MinimumOSVersion</key>
-    <string>17.0</string>
-    <key>UIDeviceFamily</key>
-    <array>
-        <integer>1</integer>
-        <integer>2</integer>
-    </array>
-    <key>UIRequiredDeviceCapabilities</key>
-    <array>
-        <string>arm64</string>
-    </array>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>PhotoStyle needs access to your photo library to import and export pictures with Photographic Styles.</string>
-</dict>
-</plist>
-EOF
+            cp Sources/PhotoStyleApp/Info-iOS.plist dist/ios/Payload/PhotoStyleApp.app/Info.plist
             APP_PATH="dist/ios/Payload/PhotoStyleApp.app"
           else
             cp -r "$APP_PATH" dist/ios/Payload/
