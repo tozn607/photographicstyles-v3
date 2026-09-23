@@ -129,7 +129,7 @@ jobs:
             APP_PATH="dist/ios/Payload/$(basename "$APP_PATH")"
           fi
 
-          codesign --force --deep --sign - "$APP_PATH"
+          codesign --force --deep --sign - --entitlements Sources/PhotoStyleApp/Entitlements.plist "$APP_PATH"
           cd dist/ios
           zip -r -y ../../PhotoStyle-iOS-v1.0.ipa Payload
           cd ../..
@@ -168,7 +168,6 @@ jobs:
           generate_release_notes: true
           body: |
             # PhotoStyle v1.0
-            Author: **@tozn607**
 
             Native Swift application for macOS and iOS to enable native Apple Photos **Photographic Styles**, **Photographic Styles 3 (Texture + Grain)**, and **Apple Portrait Mode** on imported pictures without baking in the look.
 
