@@ -27,7 +27,7 @@ PhotoStyle takes any picture (JPEG, PNG, HEIC, TIFF, WebP, RAW) and generates Ap
 
 ---
 
-## Features (Parity with xdremux)
+## Features (Parity with [XDRemux](https://github.com/21Z121Z1/XDRemux) & [XDRemux-Flutter](https://github.com/BeetMan/XDRemux-Flutter))
 
 ### 1. Apple Photos Photographic Styles (Rust)
 - Constructs the full Apple Photographic Styles ISOBMFF container hierarchy:
@@ -198,8 +198,10 @@ The repository includes a GitHub Actions workflow (`.github/workflows/build-and-
 
 ---
 
-## Author & Acknowledgements
+## Credits & Acknowledgements
 
 - **Author**: [@tozn607](https://github.com/tozn607)
-- **Engine**: Derived from `xdremux` core ISOBMFF metadata algorithms.
+- **Special Thanks & Core Engine Credits**:
+  - [**XDRemux**](https://github.com/21Z121Z1/XDRemux) by [@21Z121Z1](https://github.com/21Z121Z1) — Original research, reverse engineering, and implementation of Apple Photos ISOBMFF metadata algorithms, Photographic Styles lattice construction, and auxiliary stream grafting.
+  - [**XDRemux-Flutter**](https://github.com/BeetMan/XDRemux-Flutter) by [@BeetMan](https://github.com/BeetMan) — Cross-platform UI architecture and mobile reference application for XDRemux.
 - **License**: MIT
