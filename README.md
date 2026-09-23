@@ -192,9 +192,9 @@ Test Results: 18/18 passed.
 ## CI/CD Workflow
 
 The repository includes a GitHub Actions workflow (`.github/workflows/build-and-release.yml`) that automates:
-- **macOS Build**: Builds the Rust core, compiles release binaries for macOS (arm64), executes the test suite, and uploads `photostyle-macos-arm64-v1.0.tar.gz`.
-- **iOS Build**: Compiles the Rust core for `aarch64-apple-ios` and `aarch64-apple-ios-sim`, creates `PhotoStyleCoreRust.xcframework`, builds the iOS package scheme, and uploads `photostyle-ios-xcframework-v1.0.zip`.
-- **Automated Releases**: On tag pushes (e.g. `git tag v1.0 && git push origin v1.0`), creates a GitHub Release and publishes the macOS and iOS release assets.
+- **macOS Build**: Builds the Rust core, runs the 18-step test suite, compiles `PhotoStyleApp` and `photostyle` CLI, bundles `PhotoStyle.app`, and uploads `PhotoStyle-macOS-v1.0.zip`.
+- **iOS Build**: Compiles the Rust core for `aarch64-apple-ios`, builds `PhotoStyleApp` for iOS with `xcodebuild`, packages `Payload/PhotoStyleApp.app`, ad-hoc codesigns it, and uploads `PhotoStyle-iOS-v1.0.ipa`.
+- **Automated Releases**: Automatically creates or updates the GitHub Release with the newly built `PhotoStyle-macOS-v1.0.zip` and `PhotoStyle-iOS-v1.0.ipa`.
 
 ---
 

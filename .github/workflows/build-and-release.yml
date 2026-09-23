@@ -4,8 +4,6 @@ on:
   push:
     branches: [ "main" ]
     tags: [ "v*" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -13,7 +11,7 @@ permissions:
 
 jobs:
   build-macos:
-    name: Build macOS (CLI & App)
+    name: Build macOS (.app & CLI)
     runs-on: macos-14
     steps:
       - name: Checkout repository
@@ -42,30 +40,65 @@ jobs:
           mkdir -p Libraries
           cp rust/target/release/libxdremux_core.a Libraries/libxdremux_core.a
 
-      - name: Run Test Suite
+      - name: Run Self-Test Suite
         run: |
           swift run photostyle --test
 
-      - name: Build Release Binary
+      - name: Build Release Binaries
         run: |
           swift build -c release
 
-      - name: Package macOS Artifacts
+      - name: Package macOS Application (.app & CLI)
         run: |
-          mkdir -p dist/macos
+          mkdir -p dist/macos/PhotoStyle.app/Contents/MacOS
+          mkdir -p dist/macos/PhotoStyle.app/Contents/Resources
+          cp .build/release/PhotoStyleApp dist/macos/PhotoStyle.app/Contents/MacOS/PhotoStyleApp
           cp .build/release/photostyle dist/macos/
+
+          cat << 'EOF' > dist/macos/PhotoStyle.app/Contents/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key>
+              <string>en</string>
+              <key>CFBundleExecutable</key>
+              <string>PhotoStyleApp</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.tozn607.photostyle</string>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
+              <key>CFBundleName</key>
+              <string>PhotoStyle</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>14.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>NSPhotoLibraryUsageDescription</key>
+              <string>PhotoStyle needs access to your photo library to import and export pictures with Photographic Styles.</string>
+          </dict>
+          </plist>
+          EOF
+
+          codesign --force --deep --sign - dist/macos/PhotoStyle.app
           cd dist/macos
-          tar -czvf ../../photostyle-macos-arm64-v1.0.tar.gz photostyle
+          zip -r -y ../../PhotoStyle-macOS-v1.0.zip PhotoStyle.app photostyle
           cd ../..
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: photostyle-macos-arm64
-          path: photostyle-macos-arm64-v1.0.tar.gz
+          name: photostyle-macos
+          path: PhotoStyle-macOS-v1.0.zip
 
   build-ios:
-    name: Build iOS (StaticLib & Framework)
+    name: Build iOS (.ipa)
     runs-on: macos-14
     steps:
       - name: Checkout repository
@@ -79,86 +112,141 @@ jobs:
       - name: Install Rust Toolchain for iOS
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-ios, aarch64-apple-ios-sim
+          targets: aarch64-apple-ios
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: "rust -> rust/target"
 
-      - name: Build Rust Core for iOS Device & Simulator
+      - name: Build Rust Core for iOS
         run: |
           cd rust
           XDREMUX_USE_FFMPEG=1 cargo build --target aarch64-apple-ios --release --lib
-          XDREMUX_USE_FFMPEG=1 cargo build --target aarch64-apple-ios-sim --release --lib
           cd ..
-
-      - name: Create iOS XCFramework
-        run: |
-          mkdir -p dist/ios
-          rm -rf dist/ios/PhotoStyleCoreRust.xcframework
-          xcodebuild -create-xcframework \
-            -library rust/target/aarch64-apple-ios/release/libxdremux_core.a \
-            -headers Sources/CPhotoStyleCore/include \
-            -library rust/target/aarch64-apple-ios-sim/release/libxdremux_core.a \
-            -headers Sources/CPhotoStyleCore/include \
-            -output dist/ios/PhotoStyleCoreRust.xcframework
-
-      - name: Build iOS Swift Package / Scheme
-        run: |
-          # Copy iOS device library into Libraries/ for generic iOS build
+          mkdir -p Libraries
           cp rust/target/aarch64-apple-ios/release/libxdremux_core.a Libraries/libxdremux_core.a
+
+      - name: Build iOS Application
+        run: |
           xcodebuild build \
             -workspace PhotoStyle.xcworkspace \
-            -scheme PhotoStyleCore \
+            -scheme PhotoStyleApp \
             -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-      - name: Package iOS Artifacts
+      - name: Package iOS IPA
         run: |
+          mkdir -p dist/ios/Payload
+          APP_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "*.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            BIN_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "PhotoStyleApp" -type f | head -n 1)
+            mkdir -p dist/ios/Payload/PhotoStyleApp.app
+            cp "$BIN_PATH" dist/ios/Payload/PhotoStyleApp.app/
+            cat << 'EOF' > dist/ios/Payload/PhotoStyleApp.app/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleDevelopmentRegion</key>
+              <string>en</string>
+              <key>CFBundleDisplayName</key>
+              <string>PhotoStyle</string>
+              <key>CFBundleExecutable</key>
+              <string>PhotoStyleApp</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.tozn607.photostyle</string>
+              <key>CFBundleInfoDictionaryVersion</key>
+              <string>6.0</string>
+              <key>CFBundleName</key>
+              <string>PhotoStyleApp</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
+              <key>MinimumOSVersion</key>
+              <string>17.0</string>
+              <key>UIDeviceFamily</key>
+              <array>
+                  <integer>1</integer>
+                  <integer>2</integer>
+              </array>
+              <key>UIRequiredDeviceCapabilities</key>
+              <array>
+                  <string>arm64</string>
+              </array>
+              <key>UISupportedInterfaceOrientations</key>
+              <array>
+                  <string>UIInterfaceOrientationPortrait</string>
+                  <string>UIInterfaceOrientationLandscapeLeft</string>
+                  <string>UIInterfaceOrientationLandscapeRight</string>
+              </array>
+              <key>NSPhotoLibraryUsageDescription</key>
+              <string>PhotoStyle needs access to your photo library to import and export pictures with Photographic Styles.</string>
+          </dict>
+          </plist>
+          EOF
+            APP_PATH="dist/ios/Payload/PhotoStyleApp.app"
+          else
+            cp -r "$APP_PATH" dist/ios/Payload/
+            APP_PATH="dist/ios/Payload/$(basename "$APP_PATH")"
+          fi
+
+          codesign --force --deep --sign - "$APP_PATH"
           cd dist/ios
-          zip -r ../../photostyle-ios-xcframework-v1.0.zip PhotoStyleCoreRust.xcframework
+          zip -r -y ../../PhotoStyle-iOS-v1.0.ipa Payload
           cd ../..
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: photostyle-ios-xcframework
-          path: photostyle-ios-xcframework-v1.0.zip
+          name: photostyle-ios
+          path: PhotoStyle-iOS-v1.0.ipa
 
   release:
-    name: Publish GitHub Release
+    name: Create & Publish GitHub Release
     needs: [build-macos, build-ios]
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Download macOS Artifact
         uses: actions/download-artifact@v4
         with:
-          name: photostyle-macos-arm64
+          name: photostyle-macos
           path: release-assets
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v4
         with:
-          name: photostyle-ios-xcframework
+          name: photostyle-ios
           path: release-assets
 
-      - name: Create GitHub Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
-          name: PhotoStyle ${{ github.ref_name }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0' }}
+          name: PhotoStyle ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0' }}
           draft: false
           prerelease: false
           generate_release_notes: true
           body: |
-            ## PhotoStyle ${{ github.ref_name }}
+            # PhotoStyle v1.0
             Author: **@tozn607**
 
-            ### Features:
-            - **Apple Photos Photographic Styles (Rust)**: Generates editable tone/palette/color styles graph.
-            - **Photographic Styles 3 (Texture + Grain)**: Injects Standard `texture_styles` metadata item and 12 semantic part mattes.
-            - **Apple Portrait Mode (Rust)**: Injects editable Apple Portrait depth & disparity graph.
+            Native Swift application for macOS and iOS to enable native Apple Photos **Photographic Styles**, **Photographic Styles 3 (Texture + Grain)**, and **Apple Portrait Mode** on imported pictures without baking in the look.
+
+            ### Downloads:
+            - **macOS Application**: `PhotoStyle-macOS-v1.0.zip` (Contains `PhotoStyle.app` and `photostyle` CLI tool)
+            - **iOS Application**: `PhotoStyle-iOS-v1.0.ipa` (Sideloadable via TrollStore, AltStore, Sideloadly, or Apple Configurator)
+
+            ### Credits & Acknowledgements:
+            - [**XDRemux**](https://github.com/21Z121Z1/XDRemux) by [@21Z121Z1](https://github.com/21Z121Z1) — Original research and implementation of Apple Photos ISOBMFF metadata parsing, Photographic Styles lattice construction, and Apple Photos container features.
+            - [**XDRemux-Flutter**](https://github.com/BeetMan/XDRemux-Flutter) by [@BeetMan](https://github.com/BeetMan) — Cross-platform UI architecture and mobile reference application for XDRemux.

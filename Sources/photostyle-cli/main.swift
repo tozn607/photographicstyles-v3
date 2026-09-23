@@ -1,5 +1,36 @@
 import Foundation
 import PhotoStyleCore
+#if canImport(CoreGraphics) && canImport(ImageIO)
+import CoreGraphics
+import ImageIO
+
+@discardableResult
+func generateSyntheticImage(url: URL, format: String, width: Int = 800, height: Int = 600) -> Bool {
+    guard let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+          let context = CGContext(
+              data: nil,
+              width: width,
+              height: height,
+              bitsPerComponent: 8,
+              bytesPerRow: width * 4,
+              space: colorSpace,
+              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+          ) else {
+        return false
+    }
+    context.setFillColor(CGColor(red: 0.2, green: 0.4, blue: 0.7, alpha: 1.0))
+    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+    context.setFillColor(CGColor(red: 0.9, green: 0.5, blue: 0.2, alpha: 1.0))
+    context.fillEllipse(in: CGRect(x: width / 4, y: height / 4, width: width / 2, height: height / 2))
+
+    guard let cgImage = context.makeImage(),
+          let destination = CGImageDestinationCreateWithURL(url as CFURL, format as CFString, 1, nil) else {
+        return false
+    }
+    CGImageDestinationAddImage(destination, cgImage, nil)
+    return CGImageDestinationFinalize(destination)
+}
+#endif
 
 func printUsage() {
     print("""
@@ -60,29 +91,19 @@ func runTestSuite() {
 
     // Test 3: Prepare test inputs
     let fm = FileManager.default
-    let tempDir = URL(fileURLWithPath: "/tmp/photostyle_tests")
+    let tempDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("photostyle_tests")
     try? fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-    let testJpg = tempDir.appendingPathComponent("test_sdr.jpg").path
-    let testPng = tempDir.appendingPathComponent("test_sdr.png").path
+    let testJpgUrl = tempDir.appendingPathComponent("test_sdr.jpg")
+    let testPngUrl = tempDir.appendingPathComponent("test_sdr.png")
+    let testJpg = testJpgUrl.path
+    let testPng = testPngUrl.path
 
-    // Use sips if not present (dimensions must be > 512x512 for delta tiles)
-    if !fm.fileExists(atPath: testJpg) {
-        let sample = "/Users/tozn/Execs/xdremux/apps/flutter/integration_test/assets/motion1.jpg"
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/sips")
-        p.arguments = ["-s", "format", "jpeg", "-z", "800", "1200", sample, "--out", testJpg]
-        try? p.run()
-        p.waitUntilExit()
-    }
-    if !fm.fileExists(atPath: testPng) {
-        let sample = "/Users/tozn/Execs/xdremux/apps/flutter/integration_test/assets/motion1.jpg"
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/sips")
-        p.arguments = ["-s", "format", "png", "-z", "800", "1200", sample, "--out", testPng]
-        try? p.run()
-        p.waitUntilExit()
-    }
+    // Ensure clean synthetic test images with width & height > 512 (required for delta tiles)
+    try? fm.removeItem(at: testJpgUrl)
+    try? fm.removeItem(at: testPngUrl)
+    generateSyntheticImage(url: testJpgUrl, format: "public.jpeg", width: 800, height: 600)
+    generateSyntheticImage(url: testPngUrl, format: "public.png", width: 800, height: 600)
 
     // Test 4: Convert JPEG with PS3
     let ps3OutputJpg = tempDir.appendingPathComponent("test_ps3.heic").path
