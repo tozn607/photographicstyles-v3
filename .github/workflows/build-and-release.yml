@@ -129,7 +129,7 @@ jobs:
             APP_PATH="dist/ios/Payload/$(basename "$APP_PATH")"
           fi
 
-          codesign --force --deep --sign - --entitlements Sources/PhotoStyleApp/Entitlements.plist "$APP_PATH"
+          codesign --force --deep --sign - --generate-entitlement-der --entitlements Sources/PhotoStyleApp/Entitlements.plist "$APP_PATH"
           cd dist/ios
           zip -r -y ../../PhotoStyle-iOS-v1.0.ipa Payload
           cd ../..
