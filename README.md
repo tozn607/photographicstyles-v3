@@ -11,10 +11,15 @@ A native Swift application and command-line utility for **macOS** and **iOS** th
 **Version**: `v1.0`  
 **Author**: **@tozn607**  
 **Repository**: [https://github.com/tozn607/photographicstyles-v3](https://github.com/tozn607/photographicstyles-v3)
+**Download**: [Releases Tab](https://github.com/tozn607/photographicstyles-v3/releases)
+### Note: .ipa file is currently broken.
 
 ---
 
 ## Overview
+
+<img alt="Screenshot" src="ss.png" />
+
 
 PhotoStyle takes any picture (JPEG, PNG, HEIC, TIFF, WebP, RAW) and generates Apple's native auxiliary data structures and ISOBMFF container items without baking changes into the primary image pixels. When imported into Apple Photos on iOS 18+ or macOS Sequoia+, Apple Photos recognizes the image as an Apple-captured photo and unlocks its full suite of interactive adjustment controls:
 
