@@ -78,11 +78,46 @@ public struct DropZoneView: View {
         }
         .fileImporter(
             isPresented: $isShowingFileImporter,
-            allowedContentTypes: [.image],
+            allowedContentTypes: [.item, .image, .data],
             allowsMultipleSelection: true
         ) { result in
-            if case .success(let urls) = result {
-                state.addFiles(urls: urls)
+            switch result {
+            case .success(let urls):
+                var stagedURLs: [URL] = []
+                let fm = FileManager.default
+                let stagingDir = fm.urls(for: .cachesDirectory, in: .userDomainMask).first?
+                    .appendingPathComponent("Imported", isDirectory: true) ?? fm.temporaryDirectory
+                try? fm.createDirectory(at: stagingDir, withIntermediateDirectories: true)
+
+                for url in urls {
+                    let isAccessing = url.startAccessingSecurityScopedResource()
+                    defer {
+                        if isAccessing {
+                            url.stopAccessingSecurityScopedResource()
+                        }
+                    }
+
+                    let destURL = stagingDir.appendingPathComponent(url.lastPathComponent)
+                    if fm.fileExists(atPath: destURL.path) {
+                        try? fm.removeItem(at: destURL)
+                    }
+
+                    do {
+                        try fm.copyItem(at: url, to: destURL)
+                        stagedURLs.append(destURL)
+                    } catch {
+                        if let data = try? Data(contentsOf: url) {
+                            try? data.write(to: destURL)
+                            stagedURLs.append(destURL)
+                        } else {
+                            stagedURLs.append(url)
+                        }
+                    }
+                }
+                state.addFiles(urls: stagedURLs)
+
+            case .failure(let error):
+                state.statusMessage = "Import failed: \(error.localizedDescription)"
             }
         }
     }

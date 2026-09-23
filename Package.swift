@@ -29,7 +29,8 @@ let package = Package(
                 .unsafeFlags([
                     "-L\(packageDir)/Libraries",
                     "-L\(packageDir)/target/release",
-                    "-lxdremux_core"
+                    "-lxdremux_core",
+                    "-lc++"
                 ])
             ]
         ),

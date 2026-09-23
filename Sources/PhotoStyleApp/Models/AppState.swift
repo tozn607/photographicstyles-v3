@@ -81,7 +81,12 @@ public final class AppState: ObservableObject {
             return
         }
 
+        #if os(iOS)
+        let defaultOutDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+        let outDir = customOutputFolder ?? defaultOutDir
+        #else
         let outDir = customOutputFolder ?? url.deletingLastPathComponent()
+        #endif
         let stem = url.deletingPathExtension().lastPathComponent
         let outURL = outDir.appendingPathComponent("\(stem)_photostyle.heic")
         let item = QueueItem(sourceURL: url, outputURL: outURL)

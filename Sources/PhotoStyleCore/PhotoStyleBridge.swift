@@ -75,7 +75,7 @@ public struct PhotoConversionResult: Sendable {
 }
 
 public enum PhotoStyleBridge {
-    public static let appVersion: String = "1.0.1"
+    public static let appVersion: String = "1.0.2"
     public static let author: String = "@tozn607"
 
     public static var version: String {

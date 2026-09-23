@@ -80,7 +80,7 @@ func runTestSuite() {
 
     // Test 1: Version and author check
     assertTest("Core library version check", PhotoStyleBridge.version == "0.4.2", "Got: \(PhotoStyleBridge.version)")
-    assertTest("App version check", PhotoStyleBridge.appVersion == "1.0.1", "Got: \(PhotoStyleBridge.appVersion)")
+    assertTest("App version check", PhotoStyleBridge.appVersion == "1.0.2", "Got: \(PhotoStyleBridge.appVersion)")
     assertTest("Author check", PhotoStyleBridge.author == "@tozn607", "Got: \(PhotoStyleBridge.author)")
 
     // Test 2: Deterministic grain seed hash
