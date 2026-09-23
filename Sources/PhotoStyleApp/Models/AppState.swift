@@ -107,6 +107,12 @@ public final class AppState: ObservableObject {
         items.removeAll(where: { $0.status == .completed })
     }
 
+    public func updateItemProgress(index: Int, progress: Double) {
+        if items.indices.contains(index) {
+            items[index].progress = progress
+        }
+    }
+
     public func startConversion() {
         guard !isConverting else { return }
         let pendingIndices = items.indices.filter { items[$0].status == .pending || items[$0].status == .failed }
@@ -137,10 +143,8 @@ public final class AppState: ObservableObject {
                     item: item,
                     options: options
                 ) { [weak self] p in
-                    Task { @MainActor in
-                        if let self = self, self.items.indices.contains(index) {
-                            self.items[index].progress = p
-                        }
+                    Task { @MainActor [weak self] in
+                        self?.updateItemProgress(index: index, progress: p)
                     }
                 }
 
