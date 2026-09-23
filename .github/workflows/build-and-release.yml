@@ -63,14 +63,14 @@ jobs:
 
           codesign --force --deep --sign - dist/macos/PhotoStyle.app
           cd dist/macos
-          zip -r -y ../../PhotoStyle-macOS-v1.0.zip PhotoStyle.app photostyle
+          zip -r -y ../../PhotoStyle-macOS-v1.0.1.zip PhotoStyle.app photostyle
           cd ../..
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: photostyle-macos
-          path: PhotoStyle-macOS-v1.0.zip
+          path: PhotoStyle-macOS-v1.0.1.zip
 
   build-ios:
     name: Build iOS (.ipa)
@@ -119,26 +119,38 @@ jobs:
           mkdir -p dist/ios/Payload
           APP_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "*.app" -type d | head -n 1)
           if [ -z "$APP_PATH" ]; then
-            BIN_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "PhotoStyleApp" -type f | head -n 1)
+            BIN_PATH=$(find DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "PhotoStyleApp" -type f)
+            if [ -z "$BIN_PATH" ]; then
+              BIN_PATH=$(find DerivedData/Build/Products/Release-iphoneos -name "PhotoStyleApp" -type f ! -path "*.dSYM*" | head -n 1)
+            fi
             mkdir -p dist/ios/Payload/PhotoStyleApp.app
-            cp "$BIN_PATH" dist/ios/Payload/PhotoStyleApp.app/
+            cp "$BIN_PATH" dist/ios/Payload/PhotoStyleApp.app/PhotoStyleApp
+            chmod +x dist/ios/Payload/PhotoStyleApp.app/PhotoStyleApp
             cp Sources/PhotoStyleApp/Info-iOS.plist dist/ios/Payload/PhotoStyleApp.app/Info.plist
             APP_PATH="dist/ios/Payload/PhotoStyleApp.app"
           else
             cp -r "$APP_PATH" dist/ios/Payload/
             APP_PATH="dist/ios/Payload/$(basename "$APP_PATH")"
+            chmod +x "$APP_PATH/$(basename "$APP_PATH" .app)" 2>/dev/null || true
+          fi
+
+          echo "Inspecting packaged binary in $APP_PATH:"
+          file "$APP_PATH/PhotoStyleApp"
+          if file "$APP_PATH/PhotoStyleApp" | grep -qi "dSYM"; then
+            echo "::error::Packaged binary is a dSYM companion file, not an executable!"
+            exit 1
           fi
 
           codesign --force --deep --sign - --generate-entitlement-der --entitlements Sources/PhotoStyleApp/Entitlements.plist "$APP_PATH"
           cd dist/ios
-          zip -r -y ../../PhotoStyle-iOS-v1.0.ipa Payload
+          zip -r -y ../../PhotoStyle-iOS-v1.0.1.ipa Payload
           cd ../..
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: photostyle-ios
-          path: PhotoStyle-iOS-v1.0.ipa
+          path: PhotoStyle-iOS-v1.0.1.ipa
 
   release:
     name: Create & Publish GitHub Release
@@ -161,19 +173,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0' }}
-          name: PhotoStyle ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0' }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.1' }}
+          name: PhotoStyle ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.0.1' }}
           draft: false
           prerelease: false
           generate_release_notes: true
           body: |
-            # PhotoStyle v1.0
+            # PhotoStyle v1.0.1
 
             Native Swift application for macOS and iOS to enable native Apple Photos **Photographic Styles**, **Photographic Styles 3 (Texture + Grain)**, and **Apple Portrait Mode** on imported pictures without baking in the look.
 
             ### Downloads:
-            - **macOS Application**: `PhotoStyle-macOS-v1.0.zip` (Contains `PhotoStyle.app` and `photostyle` CLI tool)
-            - **iOS Application**: `PhotoStyle-iOS-v1.0.ipa` (Sideloadable via TrollStore, AltStore, Sideloadly, or Apple Configurator)
+            - **macOS Application**: `PhotoStyle-macOS-v1.0.1.zip` (Contains `PhotoStyle.app` and `photostyle` CLI tool)
+            - **iOS Application**: `PhotoStyle-iOS-v1.0.1.ipa` (Sideloadable via TrollStore, AltStore, Sideloadly, or Apple Configurator)
 
             ### Credits & Acknowledgements:
             - [**XDRemux**](https://github.com/21Z121Z1/XDRemux) by [@21Z121Z1](https://github.com/21Z121Z1) — Original research and implementation of Apple Photos ISOBMFF metadata parsing, Photographic Styles lattice construction, and Apple Photos container features.

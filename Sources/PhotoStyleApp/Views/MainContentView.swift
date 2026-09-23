@@ -130,7 +130,7 @@ public struct MainContentView: View {
             Divider()
 
             HStack {
-                Text("PhotoStyle v1.0")
+                Text("PhotoStyle v1.0.1")
                     .font(.caption2)
                     .fontWeight(.semibold)
                     .foregroundColor(.secondary)

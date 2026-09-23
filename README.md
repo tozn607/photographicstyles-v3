@@ -1,18 +1,17 @@
 # Photographic Styles v3 (PhotoStyle)
 
 [![Build & Release](https://github.com/tozn607/photographicstyles-v3/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/tozn607/photographicstyles-v3/actions/workflows/build-and-release.yml)
-[![Version](https://img.shields.io/badge/version-v1.0-blue.svg)](https://github.com/tozn607/photographicstyles-v3)
+[![Version](https://img.shields.io/badge/version-v1.0.1-blue.svg)](https://github.com/tozn607/photographicstyles-v3)
 [![Author](https://img.shields.io/badge/author-@tozn607-orange.svg)](https://github.com/tozn607)
 [![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20macOS-black.svg)](https://github.com/tozn607/photographicstyles-v3)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A native Swift application and command-line utility for **macOS** and **iOS** that enables native Apple Photos **Photographic Styles**, **Photographic Styles 3 (Texture + Grain)**, and **Apple Portrait Mode** on imported photos.
 
-**Version**: `v1.0`  
+**Version**: `v1.0.1`  
 **Author**: **@tozn607**  
 **Repository**: [https://github.com/tozn607/photographicstyles-v3](https://github.com/tozn607/photographicstyles-v3)  
 **Download**: [Releases Tab](https://github.com/tozn607/photographicstyles-v3/releases)
-### Note: .ipa file is currently broken.
 
 ---
 
@@ -69,7 +68,7 @@ The SwiftUI application features an Apple Human Interface Guidelines-compliant U
 - **Conversion Settings**: Toggle Photographic Styles, PS3, and Portrait Mode with real-time dependency handling.
 - **Batch Processing**: Convert multiple photos asynchronously with queue management.
 - **Photo Inspector**: Inspect input vs. output dimensions, file sizes, and verified container features.
-- **Footer**: Displays `PhotoStyle v1.0 • Author: @tozn607`.
+- **Footer**: Displays `PhotoStyle v1.0.1 • Author: @tozn607`.
 
 ---
 
@@ -80,7 +79,7 @@ PhotoStyle provides a standalone command-line tool `photostyle`:
 ```bash
 # Print version and author
 photostyle --version
-# Output: PhotoStyle v1.0 • Author: @tozn607 (Core 0.4.2)
+# Output: PhotoStyle v1.0.1 • Author: @tozn607 (Core 0.4.2)
 
 # Convert with Photographic Styles 3 (Texture + Grain)
 photostyle input.jpg -o styled.heic --ps3
