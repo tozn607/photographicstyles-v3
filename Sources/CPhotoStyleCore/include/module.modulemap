@@ -1,0 +1,4 @@
+module CPhotoStyleCore [system] {
+    header "c_photostyle.h"
+    export *
+}

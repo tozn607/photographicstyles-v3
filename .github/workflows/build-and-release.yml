@@ -1,0 +1,159 @@
+name: Build and Release PhotoStyle
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Build macOS (CLI & App)
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "rust -> rust/target"
+
+      - name: Build Rust Core for macOS
+        run: |
+          cd rust
+          XDREMUX_USE_FFMPEG=1 cargo build --release --lib
+          cd ..
+          mkdir -p Libraries
+          cp rust/target/release/libxdremux_core.a Libraries/libxdremux_core.a
+
+      - name: Run Test Suite
+        run: |
+          swift run photostyle --test
+
+      - name: Build Release Binary
+        run: |
+          swift build -c release
+
+      - name: Package macOS Artifacts
+        run: |
+          mkdir -p dist/macos
+          cp .build/release/photostyle dist/macos/
+          cd dist/macos
+          tar -czvf ../../photostyle-macos-arm64-v1.0.tar.gz photostyle
+          cd ../..
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: photostyle-macos-arm64
+          path: photostyle-macos-arm64-v1.0.tar.gz
+
+  build-ios:
+    name: Build iOS (StaticLib & Framework)
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode_16.0.app || sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Install Rust Toolchain for iOS
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios, aarch64-apple-ios-sim
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "rust -> rust/target"
+
+      - name: Build Rust Core for iOS Device & Simulator
+        run: |
+          cd rust
+          XDREMUX_USE_FFMPEG=1 cargo build --target aarch64-apple-ios --release --lib
+          XDREMUX_USE_FFMPEG=1 cargo build --target aarch64-apple-ios-sim --release --lib
+          cd ..
+
+      - name: Create iOS XCFramework
+        run: |
+          mkdir -p dist/ios
+          rm -rf dist/ios/PhotoStyleCoreRust.xcframework
+          xcodebuild -create-xcframework \
+            -library rust/target/aarch64-apple-ios/release/libxdremux_core.a \
+            -headers Sources/CPhotoStyleCore/include \
+            -library rust/target/aarch64-apple-ios-sim/release/libxdremux_core.a \
+            -headers Sources/CPhotoStyleCore/include \
+            -output dist/ios/PhotoStyleCoreRust.xcframework
+
+      - name: Build iOS Swift Package / Scheme
+        run: |
+          # Copy iOS device library into Libraries/ for generic iOS build
+          cp rust/target/aarch64-apple-ios/release/libxdremux_core.a Libraries/libxdremux_core.a
+          xcodebuild build \
+            -workspace PhotoStyle.xcworkspace \
+            -scheme PhotoStyleCore \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package iOS Artifacts
+        run: |
+          cd dist/ios
+          zip -r ../../photostyle-ios-xcframework-v1.0.zip PhotoStyleCoreRust.xcframework
+          cd ../..
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: photostyle-ios-xcframework
+          path: photostyle-ios-xcframework-v1.0.zip
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-macos, build-ios]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: photostyle-macos-arm64
+          path: release-assets
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: photostyle-ios-xcframework
+          path: release-assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          name: PhotoStyle ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## PhotoStyle ${{ github.ref_name }}
+            Author: **@tozn607**
+
+            ### Features:
+            - **Apple Photos Photographic Styles (Rust)**: Generates editable tone/palette/color styles graph.
+            - **Photographic Styles 3 (Texture + Grain)**: Injects Standard `texture_styles` metadata item and 12 semantic part mattes.
+            - **Apple Portrait Mode (Rust)**: Injects editable Apple Portrait depth & disparity graph.
